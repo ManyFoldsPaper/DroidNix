@@ -1,0 +1,8 @@
+DroidNix
+Copyright 2026 DroidNix contributors
+
+DroidNix is licensed under the Apache License, Version 2.0. See LICENSE.
+
+This application is built with AndroidX, Jetpack Compose and Kotlin, which are
+distributed under the Apache License, Version 2.0. Their respective notices are
+provided by their upstream projects and build artifacts.

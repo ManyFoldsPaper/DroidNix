@@ -1,0 +1,55 @@
+# ---------------------------------------------------------------------------
+# Android / Gradle build output
+# ---------------------------------------------------------------------------
+.gradle/
+.kotlin/
+build/
+app/build/
+**/build/
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Local machine configuration. Contains absolute SDK paths and must never be
+# committed.
+local.properties
+
+# ---------------------------------------------------------------------------
+# Build artifacts (APKs/AABs are produced locally, not stored in Git)
+# ---------------------------------------------------------------------------
+*.apk
+*.aab
+*.ap_
+dist/
+
+# ---------------------------------------------------------------------------
+# Signing material and credentials — must never be committed
+# ---------------------------------------------------------------------------
+*.jks
+*.keystore
+*.p12
+*.pem
+*.key
+keystore.properties
+secrets.properties
+signing.properties
+
+# ---------------------------------------------------------------------------
+# IDE / editor / OS noise
+# ---------------------------------------------------------------------------
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# ---------------------------------------------------------------------------
+# Logs and local captures
+# ---------------------------------------------------------------------------
+*.log
+*.trace
