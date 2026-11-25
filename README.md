@@ -23,6 +23,22 @@ observed live.
 
 ---
 
+## Download
+
+The latest APK and source archives are attached to the
+[**v0.1.5 release**](https://github.com/ManyFoldsPaper/DroidNix/releases/tag/v0.1.5):
+
+| Asset | Notes |
+|---|---|
+| `DroidNix-0.1.5-release.apk` | R8-minified release build, debug-signed for sideloading |
+| `DroidNix-0.1.5-source.tar.gz` / `.zip` | Source export of the `v0.1.5` tag |
+
+Verify the APK checksum before installing
+(`7067b2b1…ef9609`); full checksums are listed in the release notes. Building
+from source is described under [Build from source](#build-from-source).
+
+---
+
 ## What works today (verified on real hardware)
 
 Everything below was exercised on a rooted Samsung SM-T290 running Android 15
