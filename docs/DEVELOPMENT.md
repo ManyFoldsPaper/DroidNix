@@ -109,6 +109,21 @@ be "simplified" without re-testing on the device.
 
 ## Verification workflow
 
+### Host tests
+
+The RFB protocol layer has JVM tests that need no device or emulator:
+
+```sh
+./gradlew :app:testDebugUnitTest
+```
+
+`RfbClientTest` starts a mock RFB server and covers the handshake, a known
+VncAuth DES vector, Raw and Hextile decoding and the clipboard path. Run these
+after any change under `engine/display/`. Passing tests do **not** replace a
+device run: rendering, gestures and Xvnc behaviour still need hardware.
+
+### Device run
+
 Functional changes must be verified on a rooted ARM64 device. A reasonable
 sequence:
 
@@ -121,6 +136,9 @@ adb shell su -t 0 -c 'id -u; magisk -V'
 # start / stop through the UI, then observe the real state
 adb shell su -t 0 -c 'pidof Xvnc; grep -c "archlinux/mnt " /proc/mounts'
 adb shell sm list-volumes public
+
+# Phase 2 viewer: open desktop in the app, then check the session is real
+adb shell su -t 0 -c 'pidof Xvnc; ss -ltn 2>/dev/null | grep 5901'
 
 # UI performance (release build)
 adb shell dumpsys gfxinfo dev.droidnix reset

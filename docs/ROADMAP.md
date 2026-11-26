@@ -39,16 +39,27 @@ Not in this phase (and shown as such): the install wizard, the display engine.
 
 ## Phase 2 — Integrated display + input
 
-- `VncEngine`: RFB 3.8 client in Kotlin (VncAuth/DES, Raw encoding first,
-  then ZRLE), rendering into Compose, virtual keyboard, pointer capture.
-- Touch translation: tap, double-tap, long-press (right click), drag,
-  two-finger scroll, pinch-free zoom via scale control in the toolbar.
-- External keyboard/mouse: raw HID events forwarded as X keysyms/buttons,
-  modifier tracking, Super/Ctrl/Alt, wheel.
-- Clipboard: RFB `ClientCutText` ⇄ Android clipboard.
-- Full-screen immersive mode, landscape/portrait, resolution + DPI switch
-  (restart Xvnc with new geometry).
-- Verify: smoothness measured with frame timing on the SM-T290.
+Status 2026-11-26: **implemented and built (0.2.0), awaiting on-device
+verification.** The protocol layer is covered by JVM tests against a mock RFB
+server; nothing in this phase has been marked DONE.
+
+Implemented:
+- `RfbClient`: RFB 3.3/3.7/3.8, VncAuth (DES) and None, `shared=1`, Raw,
+  CopyRect, Hextile and DesktopSize.
+- `RfbFramebuffer` + `DesktopViewModel`: decoding off the main thread, dirty
+  rectangles applied to the Bitmap on the main thread, Compose invalidation.
+- Touch translation: tap, long-press (right click), drag, two-finger scroll,
+  pinch zoom, two-finger pan when zoomed, toolbar Fit/1:1/Pan.
+- Keyboard: IME text entry, special-key row, hardware key mapping, sticky
+  Ctrl/Alt.
+- Clipboard: `ClientCutText` from the toolbar, `ServerCutText` into Android.
+- Settings page for the fallback VNC password; per-environment value wins.
+- Protocol tests: handshake, VncAuth vector, Raw, Hextile, clipboard.
+
+Still open in this phase:
+- On-device smoothness and input latency measurement on the SM-T290.
+- Physical mouse wheel events (clicks and drags work; wheel is touch-only).
+- Immersive mode, DPI/geometry switching, non-Latin IME input verification.
 
 ## Phase 3 — Installation wizard
 

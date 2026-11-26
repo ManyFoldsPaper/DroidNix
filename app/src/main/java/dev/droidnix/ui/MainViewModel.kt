@@ -57,6 +57,13 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     val disclaimerAccepted: Boolean get() = settings.onboardingDone
 
+    /** Fallback VNC password for environments that have no droidnix.json. */
+    val desktopPassword: String get() = settings.vncPassword
+
+    fun setDesktopPassword(value: String) {
+        settings.vncPassword = value
+    }
+
     private var pollJob: Job? = null
 
     init {

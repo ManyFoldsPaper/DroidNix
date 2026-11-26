@@ -117,3 +117,34 @@ Notes:
 - The system IME inserted a suggestion while typing the confirmation word in
   an automated adb run; the button correctly stays disabled until the field
   is exactly `DELETE`. This is UI input noise, not an app bug.
+
+
+## Phase 2 viewer checklist — 2026-11-26 (build 0.2.0)
+
+Status: **not yet run on hardware.** Host protocol tests pass; use this list
+when the tablet is next connected.
+
+Prerequisites: environment running (`RUNNING`), Xvnc listening on loopback.
+
+1. **Connect.** Home → **Open desktop**. The framed XFCE session appears within
+   a couple of seconds. No external VNC app is installed or launched.
+2. **Pointer.** Tap a panel item (opens it). Drag a window title bar (moves it).
+   Long-press the desktop (context menu opens).
+3. **Scroll/zoom.** Two-finger swipe scrolls a window; pinch zooms; after
+   zooming, two-finger drag pans; **Fit** and **1:1** restore the view.
+4. **Keyboard.** **Keys** opens the IME; type into a terminal inside XFCE.
+   Enter, Backspace, Tab, Esc and arrows work; hardware keyboard works with the
+   tablet docked.
+5. **Clipboard.** Select text in XFCE → paste it into an Android app. Copy on
+   Android → toolbar **Paste** → paste inside XFCE with Ctrl+V.
+6. **Resize.** Rotate the tablet: the view refits and letterboxes; no crash and
+   no lost connection. (The remote 1280×800 framebuffer is unchanged.)
+7. **Failure path.** Stop the environment from a shell while the viewer is
+   open: the viewer reports the disconnect and offers Retry/Back.
+8. **Background.** Leave the app and return: the session reconnects and shows
+   the live framebuffer.
+9. **Performance.** On the release build, `dumpsys gfxinfo` over drag/scroll:
+   record janky %, median frame time and p99. Compare with XFCE idle.
+
+Record the observations and the exact build here. Do not mark the viewer DONE
+until steps 1–8 pass on the SM-T290.

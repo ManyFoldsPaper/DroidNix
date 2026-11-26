@@ -66,13 +66,22 @@ Phase 1 makes **no network requests** and collects **no telemetry**. The
 `INTERNET` permission is declared for the planned Phase 3 installer and is not
 used yet. There is no analytics, crash reporting or account system.
 
-### Display server
+### Display server and viewer
 
 The Linux desktop is served by TigerVNC bound to `127.0.0.1` (loopback only).
-VncAuth with DES is legacy and weak by modern standards, and the project ships a
-**well-known default VNC password** for convenience. Change it for any
-environment you care about. DroidNix does not expose the VNC port to the network
-and does not bundle a third-party viewer.
+DroidNix's Phase 2 viewer connects to that socket directly; it never exposes the
+display to the network and does not bundle a third-party viewer.
+
+VncAuth with DES is legacy and weak by modern standards, and the reference
+install uses a **well-known default VNC password**. Change it for any
+environment you care about. The password is stored in the environment's
+`droidnix.json` or, as a fallback, in app-private `SharedPreferences`; it is
+never logged or transmitted off the device.
+
+The clipboard bridge moves text between Android and the Linux session in both
+directions. Treat clipboard contents as visible to the other side: anything you
+copy on Android can be pasted inside the chroot, and vice versa. Phase 2 uses
+ISO-8859-1 text, not binary clipboard data.
 
 ### Builds and signing
 

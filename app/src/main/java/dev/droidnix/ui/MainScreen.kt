@@ -6,7 +6,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -22,6 +22,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -30,7 +31,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.droidnix.ui.screens.CompatibilityScreen
+import dev.droidnix.ui.screens.DesktopScreen
 import dev.droidnix.ui.screens.DisclaimerScreen
 import dev.droidnix.ui.screens.EnvironmentsScreen
 import dev.droidnix.ui.screens.HomeScreen
@@ -40,14 +43,15 @@ import dev.droidnix.ui.screens.RootRequiredScreen
 import dev.droidnix.ui.screens.SettingsScreen
 
 const val engineLabel: String =
-    "Display engine: in-process VNC (RFB) client — Phase 2. No Termux:X11, AVNC or browser is used."
+    "Display engine: in-process RFB (VNC 3.8) client rendered in Compose. " +
+        "No Termux:X11, AVNC or browser is used."
 
 private data class Tab(val label: String, val icon: ImageVector)
 
 private val tabs = listOf(
     Tab("Home", Icons.Default.Home),
     Tab("Install", Icons.Default.Add),
-    Tab("Environments", Icons.Default.List),
+    Tab("Environments", Icons.AutoMirrored.Filled.List),
     Tab("Settings", Icons.Default.Settings),
 )
 
@@ -56,7 +60,16 @@ fun DroidNixApp(vm: MainViewModel) {
     val state by vm.state.collectAsStateWithLifecycle()
     var accepted by remember { mutableStateOf(vm.disclaimerAccepted) }
     var tab by remember { mutableIntStateOf(0) }
+    var desktopOpen by rememberSaveable { mutableStateOf(false) }
     val context = LocalContext.current
+    val selectedEnv = state.environments.firstOrNull { it.rootDir == state.selected }
+
+    // While the viewer is open, skip the six-second root-status poll: the
+    // session reports its own state and the shell spawn is wasted work on a
+    // 2 GB device.
+    LaunchedEffect(desktopOpen) {
+        if (desktopOpen) vm.onBackground() else vm.onForeground()
+    }
 
     when {
         !accepted -> DisclaimerScreen(onAccept = {
@@ -82,10 +95,21 @@ fun DroidNixApp(vm: MainViewModel) {
             onRetry = { vm.refreshAll() },
         )
 
+        desktopOpen && selectedEnv != null -> {
+            val desktopVm: DesktopViewModel = viewModel()
+            DesktopScreen(
+                env = selectedEnv,
+                password = selectedEnv.config?.vncPassword ?: vm.desktopPassword,
+                onClose = { desktopOpen = false },
+                vm = desktopVm,
+            )
+        }
+
         else -> MainScaffold(
             state = state,
             tab = tab,
             onTab = { tab = it },
+            onOpenDesktop = { desktopOpen = true },
             vm = vm,
         )
     }
@@ -96,6 +120,7 @@ private fun MainScaffold(
     state: UiState,
     tab: Int,
     onTab: (Int) -> Unit,
+    onOpenDesktop: () -> Unit,
     vm: MainViewModel,
 ) {
     val snackbar = remember { SnackbarHostState() }
@@ -140,6 +165,7 @@ private fun MainScaffold(
                     state = state,
                     onStart = vm::startEnvironment,
                     onStop = vm::stopEnvironment,
+                    onOpenDesktop = onOpenDesktop,
                     onRefreshLog = vm::refreshLog,
                     onOpenInstall = { onTab(1) },
                 )
@@ -157,12 +183,15 @@ private fun MainScaffold(
                     onSelect = vm::select,
                     onStart = vm::startEnvironment,
                     onStop = vm::stopEnvironment,
+                    onOpenDesktop = onOpenDesktop,
                     onDelete = vm::deleteSelected,
                     onRefresh = vm::refreshEnvironments,
                 )
 
                 else -> SettingsScreen(
                     state = state,
+                    password = vm.desktopPassword,
+                    onPassword = vm::setDesktopPassword,
                     onDiagnostics = vm::loadDiagnostics,
                     onRecheck = vm::refreshAll,
                 )

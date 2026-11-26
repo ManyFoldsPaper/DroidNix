@@ -8,17 +8,19 @@ images on Android storage. It does not emulate Linux, ship fake progress or
 require a terminal: the device checks, root handling and shell work are real and
 observed live.
 
-![Status](https://img.shields.io/badge/status-Phase%201-orange)
+![Status](https://img.shields.io/badge/status-Phase%202-yellow)
 ![License](https://img.shields.io/badge/license-Apache--2.0-blue)
 ![Android](https://img.shields.io/badge/Android-8.0%2B%20(API%2026)-green)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.0.21-7F52FF)
 ![Compose](https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4)
 
-> **Project status — Phase 1 (v0.1.5).**
-> DroidNix currently **manages existing Arch Linux + XFCE installations**.
-> The **built-in desktop renderer** and **native touchscreen gesture support are
-> planned for Phase 2 and are not implemented yet**. The **new-install wizard**
-> is planned for Phase 3 and is also not implemented. The UI does not present
+> **Project status — Phase 2 (v0.2.0, device verification pending).**
+> DroidNix **manages existing Arch Linux + XFCE installations** and now includes
+> an **in-process RFB desktop viewer** rendered in Compose, with touch gestures,
+> an on-screen/hardware keyboard and a clipboard bridge. That viewer is built and
+> covered by protocol tests, but it has **not yet been run on the tablet** — the
+> last on-device-verified build remains v0.1.5. The **new-install wizard** is
+> still planned for Phase 3 and is not implemented. The UI does not present
 > buttons for features that do not exist.
 
 ---
@@ -61,22 +63,41 @@ device test record.
 | Install-location probing | Done | Lists internal storage and mounted SD cards, writes/removes a probe file, measures free space and checks for a free loop device. The choice persists. |
 | Delete an environment | Done | Requires typing `DELETE`; refuses mounted/running environments; removes only that environment folder. Never formats storage. |
 
-### Current limitation you should know about
+## Phase 2 display — built, awaiting on-device verification
 
-The display **server** (TigerVNC on `127.0.0.1:5901`) is started and managed by
-DroidNix, but the **in-app viewer is not built yet**. Until Phase 2 lands, the
-running desktop can be viewed with a VNC client on the same device (the workflow
-DroidNix was originally built from). There is intentionally no pretend
-"Open desktop" button.
+The **Open desktop** button launches an in-process RFB (VNC) client. No external
+VNC app, browser or X server is involved; pixels are decoded in Kotlin and drawn
+straight into Compose.
+
+| Capability | State | Notes |
+|---|---|---|
+| RFB 3.3 / 3.7 / 3.8 handshake | Built | VncAuth (DES) and None; shares the session (`shared=1`). |
+| Encodings | Built | Hextile (preferred), Raw, CopyRect, DesktopSize. |
+| Touch pointer | Built | Tap = left click, long-press = right click, drag = button-held drag. |
+| Scroll and zoom | Built | Two-finger scroll at fit scale; pinch zoom; two-finger pan when zoomed; toolbar Fit/1:1/Pan. |
+| Keyboard | Built | On-screen IME text, Backspace/Enter/arrows/Tab/Esc row, hardware key mapping, sticky Ctrl/Alt. |
+| Clipboard | Built | Linux → Android automatically; toolbar **Paste** sends Android → Linux. |
+| Framebuffer safety | Built | Network thread decodes into its own buffer; only a private dirty-rectangle copy is applied to the Bitmap on the main thread. |
+| Protocol tests | Passing | Mock RFB server: handshake, VncAuth vector, Raw, Hextile, clipboard. |
+
+**Not yet verified on hardware.** The viewer compiles and its protocol layer is
+tested on the JVM, but the 2026-11-26 build has not been exercised against the
+tablet's real Xvnc yet. Until it is, v0.1.5 remains the last device-verified
+release and v0.2.0 is not published.
+
+Known limitations of this viewer:
+
+- Clipboard and typed text use RFB's ISO-8859-1/Latin-1 path plus Unicode
+  keysyms. Latin text and most shortcuts work; non-Latin IME input inside X
+  depends on the server's keymap and is not guaranteed.
+- Mouse wheel from a physical USB mouse is not mapped separately; the
+  two-finger touch gesture provides wheel events.
+- Server-rendered desktops only. An in-process X11 backend (no VNC process) is
+  still Phase 5.
+- No audio, no multi-monitor and no automatic resolution/DPI switching yet.
 
 ## Planned, not implemented
 
-- **Integrated desktop rendering** — in-process RFB (VNC) client in Kotlin,
-  rendered directly in Compose. *Phase 2.*
-- **Native touchscreen support** — tap, long-press for right click, drag,
-  two-finger scroll and zoom translated into RFB pointer events. *Phase 2.*
-- **External keyboard and mouse**, modifier handling and wheel events. *Phase 2.*
-- **Clipboard bridge** between Android and the Linux session. *Phase 2.*
 - **New-install wizard** (download, verify, create image, bootstrap, install
   packages). *Phase 3.*
 - **Additional distributions and desktops** (Debian, Ubuntu, Alpine, Fedora;
@@ -180,8 +201,10 @@ the UI smooth: measured ~3 % janky frames versus ~63 % in a debuggable build
 5. On **Install**, adopt a legacy install if it has no `droidnix.json`.
 6. On **Home** or **My environments**, start the environment. Status, loop
    device, swap and Xvnc are read live.
-7. To view the desktop in Phase 1, use a VNC client on the same device pointed
-   at `127.0.0.1:5901` (the in-app viewer is Phase 2).
+7. Press **Open desktop** to view the session in the built-in viewer. Drag with
+   one finger to move the pointer, long-press for a right click, two-finger swipe
+   to scroll and pinch to zoom. The toolbar exposes **Keys**, **Fit**, **1:1**,
+   **Pan**, **Ctrl**, **Alt** and **Paste**.
 8. **Stop** shuts the session down without unmounting Android's SD card.
 9. **Delete this environment** removes the selected folder after typing
    `DELETE`; it refuses while the environment is running.
@@ -217,7 +240,7 @@ the UI smooth: measured ~3 % janky frames versus ~63 % in a debuggable build
 ## Contributing
 
 Contributions are welcome, especially device compatibility reports, fixes for
-the shell layer and the Phase 2 RFB client. Read
+the shell layer and the RFB viewer. Read
 [CONTRIBUTING.md](CONTRIBUTING.md) first. The project's rule is simple: no
 feature is marked done until it is verified on a real device.
 

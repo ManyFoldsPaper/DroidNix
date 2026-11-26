@@ -85,23 +85,57 @@ Runtime status is *observed*, not tracked in memory: the image mountpoint,
 `losetup` attachment and `Xvnc` process are checked on every refresh, so the
 app survives being killed and restarted.
 
-## Display engine
+## Display engine (Phase 2)
 
-The Linux side currently runs TigerVNC (X11, RFB protocol). The display engine
-is defined as an interface so backends can be swapped:
+The Linux side runs TigerVNC (`Xvnc :1`, loopback RFB). DroidNix talks RFB
+itself; no VNC app, browser or X server is bundled.
 
-```kotlin
-interface DisplayEngine {
-    suspend fun connect(host: String, port: Int, password: String): DisplaySession
-}
+```
+DesktopScreen (Compose)
+  │  gestures / keyboard / clipboard
+  ▼
+DesktopViewModel
+  │  connect(host, port, password), pointer/key/wheel/cutText
+  ▼
+RfbClient ── socket ── 127.0.0.1:5901
+  │  RFB 3.3/3.7/3.8, VncAuth (DES) or None
+  │  Hextile / Raw / CopyRect / DesktopSize
+  ▼
+DesktopEvent channel (Connected, Resized, Frame, Clipboard, Failure, Closed)
+  │  consumed on the main thread
+  ▼
+RfbFramebuffer (Bitmap + version)
+  │
+  └── Compose Canvas draws the Bitmap
 ```
 
-Milestone 1 backend: **in-process RFB client** (`VncEngine`) rendering into a
-Compose `ImageBitmap`, sending pointer/key events. No external app, no
-WebView. This is a genuine integrated viewer; it is *not* an in-process X
-server, because that would require shipping `libXlorie`-style native X11
-(NDK, EGL, ~tens of MB) — tracked as an alternative backend in ROADMAP Phase 5,
-not silently dropped.
+The pieces under `engine/display/`:
+
+| File | Responsibility |
+|---|---|
+| `RfbProtocol.kt` | Constants, VncAuth DES response, X11 keysym mapping |
+| `RfbClient.kt` | Blocking session: handshake, message loop, decoding, input writes |
+| `RfbFramebuffer.kt` | Bitmap the viewer draws; version counter for invalidation |
+| `ui/DesktopViewModel.kt` | Session lifecycle, main-thread event consumption, input API |
+| `ui/screens/DesktopScreen.kt` | Full-screen canvas, gestures, toolbar, keyboard, clipboard |
+
+**Threading.** Decoding happens on an IO coroutine. Each update produces a
+*private copy* of the dirty rectangle, sent through a channel and applied to
+the Bitmap with `Bitmap.setPixels` only on the main thread, so the render
+thread never reads a Bitmap that is being mutated.
+
+**Geometry.** The framebuffer is fitted by aspect ratio. Pinch zoom adjusts a
+local scale around the gesture centroid; pan is clamped so the image cannot be
+lost off-screen. `DesktopSize` updates resize both the Bitmap and the view.
+
+**Input.** One finger is the pointer: tap = left click, long-press = right
+click, drag = button held. Two fingers scroll at fit scale and pan when zoomed;
+pinch zooms. Keys are sent as X11 keysyms; Ctrl/Alt can be latched from the
+toolbar. Clipboard uses RFB `ClientCutText`/`ServerCutText` (Latin-1).
+
+This is a genuine integrated viewer, but it is *not* an in-process X server:
+that would require shipping X11 (NDK, EGL, tens of MB) and remains an
+alternative backend in Phase 5, not silently dropped.
 
 ## Safety model
 

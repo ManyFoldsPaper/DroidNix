@@ -36,6 +36,7 @@ fun HomeScreen(
     state: UiState,
     onStart: () -> Unit,
     onStop: () -> Unit,
+    onOpenDesktop: () -> Unit,
     onRefreshLog: () -> Unit,
     onOpenInstall: () -> Unit,
 ) {
@@ -75,6 +76,7 @@ fun HomeScreen(
                 busy = state.busy,
                 onStart = onStart,
                 onStop = onStop,
+                onOpenDesktop = onOpenDesktop,
             )
         }
 
@@ -110,6 +112,7 @@ private fun EnvironmentCard(
     busy: String?,
     onStart: () -> Unit,
     onStop: () -> Unit,
+    onOpenDesktop: () -> Unit,
 ) {
     val running = status?.running == true
     val partial = status?.mounted == true && status.xvnc.not()
@@ -132,6 +135,7 @@ private fun EnvironmentCard(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             if (running) {
+                Button(onClick = onOpenDesktop, enabled = busy == null) { Text("Open desktop") }
                 OutlinedButton(onClick = onStop, enabled = busy == null) { Text("Stop Linux") }
             } else if (partial) {
                 Button(onClick = onStart, enabled = busy == null) { Text("Start desktop") }
@@ -191,9 +195,9 @@ private fun EnvironmentCard(
             )
         }
         Text(
-            "The desktop runs at 1280×800 on the loopback VNC port. The built-in viewer " +
-                "(touch, scaling, clipboard) is the next milestone; until it lands, DroidNix " +
-                "does not ship a pretend display button.",
+            "Open desktop shows the live session in the built-in viewer: one finger drives " +
+                "the pointer, long-press is a right click, two fingers scroll, pinch zooms. " +
+                "The connection is loopback-only.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

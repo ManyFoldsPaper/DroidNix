@@ -7,8 +7,47 @@ builds.
 
 ## [Unreleased]
 
-Planned Phase 2 work: in-process RFB (VNC) viewer rendered in Compose, native
-touch gesture translation, external keyboard/mouse and clipboard bridge.
+Nothing yet.
+
+## [0.2.0] — 2026-11-26 (device verification pending)
+
+Phase 2: the desktop is now rendered inside DroidNix. This build is compiled
+and protocol-tested on the JVM but has **not** been run on the SM-T290 yet.
+
+### Added
+
+- **In-process RFB viewer.** `RfbClient` implements RFB 3.3/3.7/3.8 with
+  VncAuth (DES) and None security, sharing the existing session. Encodings:
+  Hextile (preferred), Raw, CopyRect and the DesktopSize pseudo-encoding.
+- **Compose desktop screen.** The framebuffer is drawn into a Compose `Canvas`,
+  with connection, failure and disconnect states and a Retry action.
+- **Touch input.** Tap = left click, long-press = right click, drag = held
+  button, two-finger scroll, pinch zoom and two-finger pan when zoomed.
+  Toolbar actions: Fit, 1:1 and Pan.
+- **Keyboard.** On-screen text entry through the IME, a special-key row
+  (Esc, Tab, arrows, Enter, Backspace), hardware key mapping and sticky
+  Ctrl/Alt modifiers.
+- **Clipboard bridge.** Text cut on the Linux side is placed on the Android
+  clipboard; the toolbar **Paste** action sends Android text to Linux.
+- **Desktop password setting** for environments without `droidnix.json`; an
+  environment's own config still wins.
+- **JVM protocol tests** with a mock RFB server: handshake, a known VncAuth
+  vector, Raw, Hextile and clipboard.
+
+### Changed
+
+- Version 0.2.0 (versionCode 12); About shows milestone 2.
+- Status polling is paused while the viewer is open, to avoid a root shell
+  every six seconds during a session.
+- Home and My environments now expose **Open desktop** when the environment is
+  running.
+- README, architecture, roadmap, compatibility and security documents describe
+  the viewer and mark it BUILT pending device verification.
+
+### Notes
+
+- The v0.1.5 GitHub release remains the latest published build until 0.2.0 is
+  verified on hardware.
 
 ## [0.1.5] — 2026-11-25
 

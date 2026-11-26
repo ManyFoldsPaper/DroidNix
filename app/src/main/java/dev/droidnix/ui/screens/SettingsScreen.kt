@@ -12,10 +12,16 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import dev.droidnix.core.Compatibility
 import dev.droidnix.ui.UiState
@@ -27,6 +33,8 @@ import dev.droidnix.ui.components.SectionCard
 @Composable
 fun SettingsScreen(
     state: UiState,
+    password: String,
+    onPassword: (String) -> Unit,
     onDiagnostics: () -> Unit,
     onRecheck: () -> Unit,
 ) {
@@ -62,6 +70,29 @@ fun SettingsScreen(
                 KeyValueRow("exFAT", if (device.hasExfat) "supported" else "missing")
                 KeyValueRow("Free loop", device.freeLoopDevice ?: "none")
             }
+        }
+
+        SectionCard("Desktop viewer") {
+            var passwordField by remember { mutableStateOf(password) }
+            OutlinedTextField(
+                value = passwordField,
+                onValueChange = {
+                    passwordField = it
+                    onPassword(it)
+                },
+                singleLine = true,
+                label = { Text("VNC password") },
+                visualTransformation = PasswordVisualTransformation(),
+                modifier = Modifier.fillMaxWidth(),
+                supportingText = {
+                    Text(
+                        "Used for environments without a droidnix.json. The password is " +
+                            "only sent to 127.0.0.1 and is stored in app-private storage.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                },
+            )
+            KeyValueRow("Viewer", "in-process RFB client (Compose)")
         }
 
         SectionCard("Root") {
@@ -107,7 +138,7 @@ fun SettingsScreen(
         }
 
         SectionCard("About") {
-            KeyValueRow("Version", "0.1.5 (milestone 1)")
+            KeyValueRow("Version", "0.2.0 (milestone 2)")
             Text(
                 "Bundled helper scripts are executed as root directly from the APK " +
                     "(piped over stdin), so no copies live on writable storage.\n\n" +

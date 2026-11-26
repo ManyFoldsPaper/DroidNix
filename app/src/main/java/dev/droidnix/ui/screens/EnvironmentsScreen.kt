@@ -44,6 +44,7 @@ fun EnvironmentsScreen(
     onSelect: (String) -> Unit,
     onStart: () -> Unit,
     onStop: () -> Unit,
+    onOpenDesktop: () -> Unit,
     onDelete: () -> Unit,
     onRefresh: () -> Unit,
 ) {
@@ -96,6 +97,7 @@ fun EnvironmentsScreen(
                     Spacer(Modifier.height(6.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         if (running) {
+                            Button(onClick = onOpenDesktop, enabled = state.busy == null) { Text("Open desktop") }
                             OutlinedButton(onClick = onStop, enabled = state.busy == null) { Text("Stop") }
                         } else {
                             Button(onClick = onStart, enabled = state.busy == null) { Text("Start") }

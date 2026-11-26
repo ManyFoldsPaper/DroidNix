@@ -79,10 +79,23 @@ offered.
 
 ## Display
 
-The Linux side runs TigerVNC (RFB). The in-app viewer is **not implemented yet**
-(Phase 2), so Phase 1 users view the desktop with a VNC client on the same
-device at `127.0.0.1:5901`. Integrated rendering and native touch gestures are
-planned, not present.
+The Linux side runs TigerVNC (`Xvnc :1`) bound to loopback. DroidNix includes an
+**in-process RFB viewer** (RFB 3.3/3.7/3.8, VncAuth, Hextile/Raw/CopyRect) with
+touch gestures, keyboard and clipboard. It is built in 0.2.0 and awaiting
+on-device verification; the last verified release (0.1.5) used an external VNC
+client at `127.0.0.1:5901`.
+
+Requirements for the built-in viewer:
+
+- Xvnc started by `dn-start.sh` with VncAuth and the environment's
+  `.vnc/passwd`. The password comes from `droidnix.json` or Settings.
+- A loopback connection; no network exposure is required.
+- The desktop's RFB implementation must support at least Raw encoding
+  (Hextile is used when offered). TigerVNC does.
+
+Limitations: Latin-1 clipboard/typing (Unicode keysyms for other characters),
+no audio, no multi-monitor, no automatic DPI switching, and no physical
+mouse-wheel mapping.
 
 ## How to check your own device
 
