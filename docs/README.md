@@ -24,18 +24,19 @@ Related top-level documents:
 
 ## Status at a glance
 
-- **Current build:** 0.2.0 (Phase 2). **Device verification pending.**
-- **Last device-verified release:** 0.1.5 (Phase 1), on the SM-T290.
+- **Current build:** 0.2.0 (Phase 2). **Verified on the SM-T290 on 2026-11-27.**
+- **Last device-verified release:** 0.2.0 (Phase 2).
 - **Verified on hardware:** root/compatibility gates, disclaimer, discovery,
   adoption, start/stop, partial-state recovery, live status, session log,
-  diagnostics, install-location probing, environment deletion.
-- **Built, awaiting the tablet run:** in-process RFB viewer, touch and pinch
-  gestures, on-screen/hardware keyboard, clipboard bridge, responsive desktop
-  resize. Protocol unit tests pass on the host.
+  diagnostics, install-location probing, environment deletion, the in-process
+  RFB viewer with touch/pinch gestures, IME and special keys, clipboard in both
+  directions and rotation refit.
+- **Not verified:** physical keyboard and mouse (no hardware was available);
+  sticky Ctrl/Alt was not exercised on device.
 - **Not implemented:** new-install wizard, additional distributions/desktops,
   in-process X11, audio, multi-monitor, DPI switching.
 
-The viewer checklist to run on hardware is at the end of
+The viewer checklist and its 2026-11-27 results are at the end of
 [VERIFICATION.md](VERIFICATION.md).
 
 When a document and the code disagree, the code wins — then fix the document.

@@ -1,18 +1,17 @@
 # Changelog
 
 All notable changes to DroidNix are documented here. The project follows
-[Semantic Versioning](https://semver.org/) for its own version number.
-There have been no public releases yet; all versions below are development
-builds.
+[Semantic Versioning](https://semver.org/) for its own version number. Builds
+are debug-signed development releases, not Play Store releases.
 
 ## [Unreleased]
 
 Nothing yet.
 
-## [0.2.0] — 2026-11-26 (device verification pending)
+## [0.2.0] — 2026-11-27
 
-Phase 2: the desktop is now rendered inside DroidNix. This build is compiled
-and protocol-tested on the JVM but has **not** been run on the SM-T290 yet.
+Phase 2: the desktop is now rendered inside DroidNix. Verified on the SM-T290
+against a live XFCE session (see `docs/VERIFICATION.md`).
 
 ### Added
 
@@ -42,12 +41,31 @@ and protocol-tested on the JVM but has **not** been run on the SM-T290 yet.
 - Home and My environments now expose **Open desktop** when the environment is
   running.
 - README, architecture, roadmap, compatibility and security documents describe
-  the viewer and mark it BUILT pending device verification.
+  the viewer and its verified state on the SM-T290.
+
+### Fixed during on-device verification
+
+- **Input crash.** Socket writes moved off the main thread into a dedicated
+  writer thread (`NetworkOnMainThreadException`).
+- **Hextile artifacts.** Sub-rectangle width/height nibbles are `size - 1`; the
+  decoder now adds one, removing corrupted tiles.
+- **Unreachable desktop top.** The toolbar is a sibling of the canvas instead of
+  an overlay, so the XFCE panel and title bars can be tapped.
+- **Zoom painted over the toolbar.** The canvas is clipped to its bounds.
+- **Malformed geometry.** Server rectangles are clipped to the framebuffer
+  rather than trusted, so bad geometry cannot crash a session.
+- **Clipboard did nothing.** The session script starts `vncconfig -nowin`;
+  without it TigerVNC never bridges the X CLIPBOARD selection.
+- **Misleading disconnect text.** A mid-session EOF now reads "The desktop
+  connection was closed." instead of blaming the handshake.
+- **First-launch race.** Discovery retries briefly and Home offers
+  **Check again**, so a su grant that is still pending no longer looks like a
+  missing image.
 
 ### Notes
 
-- The v0.1.5 GitHub release remains the latest published build until 0.2.0 is
-  verified on hardware.
+- Physical keyboard and mouse input path exists but could not be tested; no
+  hardware was available. This is stated in README and `docs/FEATURES.md` #30.
 
 ## [0.1.5] — 2026-11-25
 

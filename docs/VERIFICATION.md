@@ -121,8 +121,9 @@ Notes:
 
 ## Phase 2 viewer checklist — 2026-11-26 (build 0.2.0)
 
-Status: **not yet run on hardware.** Host protocol tests pass; use this list
-when the tablet is next connected.
+Status: **run on hardware 2026-11-27** with release build 0.2.0; results below.
+Steps 1–3 and 5–9 passed. Step 4 passed for the on-screen keyboard; the
+physical-hardware half was not testable (see results).
 
 Prerequisites: environment running (`RUNNING`), Xvnc listening on loopback.
 
@@ -148,3 +149,39 @@ Prerequisites: environment running (`RUNNING`), Xvnc listening on loopback.
 
 Record the observations and the exact build here. Do not mark the viewer DONE
 until steps 1–8 pass on the SM-T290.
+
+## Results — 2026-11-27, DroidNix 0.2.0
+
+Device: SM-T290, LineageOS 22.2 / Android 15 (API 35), Magisk 31100. Release
+build (`assembleRelease`, R8), installed over adb. Linux side: Arch + XFCE,
+Xvnc 1.16.2 at 1280×800, VncAuth. All observations below were made on the
+tablet screen, not on a host client.
+
+| Step | Result | Evidence |
+|---|---|---|
+| 1 Connect | Pass | Home → Open desktop rendered the live `1280×800 · alarm@localhost` XFCE desktop in-process. |
+| 2 Pointer | Pass | Panel click opened a terminal; double-click opened Thunar; title-bar drag moved a window; long-press opened the desktop context menu. |
+| 3 Scroll/zoom | Pass | Two-finger swipe scrolled xfce4-terminal scrollback (263 → 278 → 300 and back); pinch zoomed about the centroid; two-finger drag panned while zoomed; Fit and 1:1 restored the view; Pan mode moved the surface. |
+| 4 Keyboard (on-screen) | Pass | IME typed into xfce4-terminal; Enter and the special-key row worked. Hardware key map and physical keyboard were **not** tested (none available), and sticky Ctrl/Alt was not exercised in this run. |
+| 5 Clipboard | Pass | Linux → Android: a marker owned on the X CLIPBOARD appeared in Android's clipboard overlay and pasted into the Settings search field as `paste-check-9`. Android → Linux: `markerB-55`, copied in Android Settings, was sent by toolbar **Paste** and read back from the X CLIPBOARD (which had no owner before the tap). |
+| 6 Resize | Pass | Rotating portrait ↔ landscape refitted and letterboxed the view; the session stayed connected and the remote framebuffer stayed 1280×800. |
+| 7 Failure path | Pass | `kill` on Xvnc while the viewer was open produced "Not connected / Could not open the desktop / The desktop connection was closed." with Retry and Back. After a crash the Home screen showed PARTIAL and "Start desktop" recovered the session. |
+| 8 Background | Pass | Home then relaunch returned to the live desktop; the XFCE clock had advanced (12:52 → 12:55). |
+| 9 Performance | Pass | `dumpsys gfxinfo` over 8 swipe passes: 386 frames, 14 janky (3.6 %), median 9 ms, p90 17 ms, p99 23 ms; GPU p99 10 ms. |
+
+Defects found and fixed during this run (details in `CHANGELOG.md`):
+- main-thread socket write crash; Hextile sub-rect off-by-one; toolbar overlay
+  made the top 160 px unreachable; zoomed canvas painted over the toolbar;
+  malformed server rectangles not clipped; TigerVNC clipboard needed
+  `vncconfig -nowin` in the session; handshake wording used for mid-session
+  disconnects; first-launch discovery race.
+
+Notes:
+- `vncconfig` survives a normal session start and is present after a crash
+  restart (`ps` shows it alongside Xvnc).
+- The verification harness initially used wrong `XSelectionRequestEvent`
+  offsets, so an early clipboard run always answered "failure". After fixing
+  the offsets the server was confirmed to emit `ServerCutText` to an
+  independent RFB client, and then to the app.
+- Still open: physical keyboard/mouse, mouse-wheel mapping from a physical
+  mouse, immersive mode, DPI switching, non-Latin IME.

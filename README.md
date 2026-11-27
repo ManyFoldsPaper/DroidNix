@@ -14,30 +14,30 @@ observed live.
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.0.21-7F52FF)
 ![Compose](https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4)
 
-> **Project status — Phase 2 (v0.2.0, device verification pending).**
-> DroidNix **manages existing Arch Linux + XFCE installations** and now includes
-> an **in-process RFB desktop viewer** rendered in Compose, with touch gestures,
-> an on-screen/hardware keyboard and a clipboard bridge. That viewer is built and
-> covered by protocol tests, but it has **not yet been run on the tablet** — the
-> last on-device-verified build remains v0.1.5. The **new-install wizard** is
-> still planned for Phase 3 and is not implemented. The UI does not present
-> buttons for features that do not exist.
+> **Project status — Phase 2 delivered (v0.2.0, verified on the SM-T290).**
+> DroidNix **manages existing Arch Linux + XFCE installations** and includes an
+> **in-process RFB desktop viewer** rendered in Compose, with touch gestures,
+> an on-screen keyboard and a clipboard bridge. The viewer was exercised against
+> the tablet's live Xvnc: rendering, gestures, IME typing and the clipboard in
+> both directions. A **physical keyboard or mouse could not be tested** (none
+> was available), and the **new-install wizard** is still planned for Phase 3.
+> The UI does not present buttons for features that do not exist.
 
 ---
 
 ## Download
 
 The latest APK and source archives are attached to the
-[**v0.1.5 release**](https://github.com/ManyFoldsPaper/DroidNix/releases/tag/v0.1.5):
+[**v0.2.0 release**](https://github.com/ManyFoldsPaper/DroidNix/releases/tag/v0.2.0):
 
 | Asset | Notes |
 |---|---|
-| `DroidNix-0.1.5-release.apk` | R8-minified release build, debug-signed for sideloading |
-| `DroidNix-0.1.5-source.tar.gz` / `.zip` | Source export of the `v0.1.5` tag |
+| `DroidNix-0.2.0-release.apk` | R8-minified release build, debug-signed for sideloading |
+| `DroidNix-0.2.0-source.tar.gz` / `.zip` | Source export of the `v0.2.0` tag |
 
-Verify the APK checksum before installing
-(`7067b2b1…ef9609`); full checksums are listed in the release notes. Building
-from source is described under [Build from source](#build-from-source).
+Verify the APK checksum before installing; full checksums and checksums for the
+source archives are listed in the release notes. Building from source is
+described under [Build from source](#build-from-source).
 
 ---
 
@@ -63,7 +63,7 @@ device test record.
 | Install-location probing | Done | Lists internal storage and mounted SD cards, writes/removes a probe file, measures free space and checks for a free loop device. The choice persists. |
 | Delete an environment | Done | Requires typing `DELETE`; refuses mounted/running environments; removes only that environment folder. Never formats storage. |
 
-## Phase 2 display — built, awaiting on-device verification
+## Phase 2 display — verified on the SM-T290
 
 The **Open desktop** button launches an in-process RFB (VNC) client. No external
 VNC app, browser or X server is involved; pixels are decoded in Kotlin and drawn
@@ -71,22 +71,28 @@ straight into Compose.
 
 | Capability | State | Notes |
 |---|---|---|
-| RFB 3.3 / 3.7 / 3.8 handshake | Built | VncAuth (DES) and None; shares the session (`shared=1`). |
-| Encodings | Built | Hextile (preferred), Raw, CopyRect, DesktopSize. |
-| Touch pointer | Built | Tap = left click, long-press = right click, drag = button-held drag. |
-| Scroll and zoom | Built | Two-finger scroll at fit scale; pinch zoom; two-finger pan when zoomed; toolbar Fit/1:1/Pan. |
-| Keyboard | Built | On-screen IME text, Backspace/Enter/arrows/Tab/Esc row, hardware key mapping, sticky Ctrl/Alt. |
-| Clipboard | Built | Linux → Android automatically; toolbar **Paste** sends Android → Linux. |
-| Framebuffer safety | Built | Network thread decodes into its own buffer; only a private dirty-rectangle copy is applied to the Bitmap on the main thread. |
-| Protocol tests | Passing | Mock RFB server: handshake, VncAuth vector, Raw, Hextile, clipboard. |
+| RFB 3.3 / 3.7 / 3.8 handshake | Verified | VncAuth (DES) and None; shares the session (`shared=1`). |
+| Encodings | Verified | Hextile (preferred), Raw, CopyRect, DesktopSize. |
+| Touch pointer | Verified | Tap = left click (Thunar opened), long-press = right click (desktop menu), drag = button-held drag (window moved). |
+| Scroll and zoom | Verified | Two-finger scroll scrolls a terminal; pinch zooms; two-finger pan when zoomed; toolbar Fit/1:1/Pan. |
+| Keyboard | Verified (on-screen) | IME typing into xfce4-terminal, Enter and the special-key row. Hardware key mapping is compiled but a physical keyboard was not available to test. |
+| Clipboard | Verified both ways | Linux → Android pasted into the Settings search field; Android → Linux pasted into XFCE via the toolbar **Paste**. |
+| Framebuffer safety | Verified | Network thread decodes into its own buffer; only a private dirty-rectangle copy is applied to the Bitmap on the main thread. |
+| Protocol tests | Passing | Five mock-server tests: handshake/VncAuth vector, Raw + clipboard, Hextile, coloured Hextile sub-rect, oversized-rect clipping. |
 
-**Not yet verified on hardware.** The viewer compiles and its protocol layer is
-tested on the JVM, but the 2026-11-26 build has not been exercised against the
-tablet's real Xvnc yet. Until it is, v0.1.5 remains the last device-verified
-release and v0.2.0 is not published.
+**Verified on hardware, 2026-11-27**, with the release build on the SM-T290
+(LineageOS 22.2 / Android 15): the live 1280×800 XFCE desktop rendered,
+rotating the tablet refitted the view without dropping the session, killing Xvnc
+surfaced a Retry/Back screen, leaving and returning kept the session, and
+`dumpsys gfxinfo` over drag/scroll recorded 386 frames with 3.6 % janky,
+median 9 ms, p99 23 ms. See
+[docs/VERIFICATION.md](docs/VERIFICATION.md#results--2026-11-27-droidnix-020).
 
 Known limitations of this viewer:
 
+- **Physical keyboard and mouse are untested.** The key map and pointer paths
+  exist, but no USB/Bluetooth keyboard or mouse was available; only touch and
+  the on-screen keyboard were exercised.
 - Clipboard and typed text use RFB's ISO-8859-1/Latin-1 path plus Unicode
   keysyms. Latin text and most shortcuts work; non-Latin IME input inside X
   depends on the server's keymap and is not guaranteed.

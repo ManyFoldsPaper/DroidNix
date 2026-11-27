@@ -39,26 +39,33 @@ Not in this phase (and shown as such): the install wizard, the display engine.
 
 ## Phase 2 — Integrated display + input
 
-Status 2026-11-26: **implemented and built (0.2.0), awaiting on-device
-verification.** The protocol layer is covered by JVM tests against a mock RFB
-server; nothing in this phase has been marked DONE.
+Status 2026-11-27: **delivered and verified on the SM-T290** with release build
+0.2.0. The protocol layer has JVM tests; the viewer was then exercised against
+the tablet's live Xvnc session.
 
-Implemented:
+Implemented and verified:
 - `RfbClient`: RFB 3.3/3.7/3.8, VncAuth (DES) and None, `shared=1`, Raw,
-  CopyRect, Hextile and DesktopSize.
+  CopyRect, Hextile and DesktopSize. Outbound messages go through a writer
+  thread, server rectangles are clipped to the framebuffer and Hextile sub-rect
+  sizes are decoded correctly.
 - `RfbFramebuffer` + `DesktopViewModel`: decoding off the main thread, dirty
   rectangles applied to the Bitmap on the main thread, Compose invalidation.
 - Touch translation: tap, long-press (right click), drag, two-finger scroll,
-  pinch zoom, two-finger pan when zoomed, toolbar Fit/1:1/Pan.
-- Keyboard: IME text entry, special-key row, hardware key mapping, sticky
-  Ctrl/Alt.
-- Clipboard: `ClientCutText` from the toolbar, `ServerCutText` into Android.
+  pinch zoom, two-finger pan when zoomed, toolbar Fit/1:1/Pan — each observed
+  on device.
+- Keyboard: IME text entry and the special-key row verified in
+  xfce4-terminal; sticky Ctrl/Alt.
+- Clipboard: `ServerCutText` into the Android clipboard (pasted into Settings)
+  and `ClientCutText` via the toolbar (read back from the X CLIPBOARD).
+  `vncconfig -nowin` is started by the session script.
 - Settings page for the fallback VNC password; per-environment value wins.
-- Protocol tests: handshake, VncAuth vector, Raw, Hextile, clipboard.
+- Protocol tests: handshake, VncAuth vector, Raw, Hextile, clipboard, Hextile
+  sub-rect sizes and oversized-rect clipping.
 
 Still open in this phase:
-- On-device smoothness and input latency measurement on the SM-T290.
-- Physical mouse wheel events (clicks and drags work; wheel is touch-only).
+- **Physical keyboard and mouse.** No hardware was available; the key map and
+  pointer buttons are compiled but unverified (tracked as feature #30).
+- Physical mouse wheel mapping (touch supplies wheel events today).
 - Immersive mode, DPI/geometry switching, non-Latin IME input verification.
 
 ## Phase 3 — Installation wizard

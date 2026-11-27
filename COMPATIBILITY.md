@@ -81,9 +81,9 @@ offered.
 
 The Linux side runs TigerVNC (`Xvnc :1`) bound to loopback. DroidNix includes an
 **in-process RFB viewer** (RFB 3.3/3.7/3.8, VncAuth, Hextile/Raw/CopyRect) with
-touch gestures, keyboard and clipboard. It is built in 0.2.0 and awaiting
-on-device verification; the last verified release (0.1.5) used an external VNC
-client at `127.0.0.1:5901`.
+touch gestures, keyboard and clipboard. It is verified in 0.2.0 on the SM-T290
+against TigerVNC 1.16.2; v0.1.5 used an external VNC client at
+`127.0.0.1:5901`.
 
 Requirements for the built-in viewer:
 
