@@ -132,7 +132,15 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     fun refreshEnvironments() {
         viewModelScope.launch {
-            val list = withContext(Dispatchers.IO) { repo.discover() }
+            var list = withContext(Dispatchers.IO) { repo.discover() }
+            // The first root shell after install can race the su grant dialog,
+            // which makes a perfectly good image look absent. Give it a moment.
+            var attempt = 0
+            while (list.isEmpty() && _state.value.root?.usable == true && attempt < 2) {
+                delay(1200L * (attempt + 1))
+                list = withContext(Dispatchers.IO) { repo.discover() }
+                attempt++
+            }
             val keep = _state.value.selected
             val selected = when {
                 keep != null && list.any { it.rootDir == keep } -> keep

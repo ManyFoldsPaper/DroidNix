@@ -168,6 +168,7 @@ private fun MainScaffold(
                     onOpenDesktop = onOpenDesktop,
                     onRefreshLog = vm::refreshLog,
                     onOpenInstall = { onTab(1) },
+                    onCheckAgain = vm::refreshEnvironments,
                 )
 
                 1 -> InstallScreen(

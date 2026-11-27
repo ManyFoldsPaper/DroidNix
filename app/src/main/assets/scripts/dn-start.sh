@@ -96,6 +96,9 @@ Xvnc :1 -geometry $GEOMETRY -depth 24 -dpi $DPI \\
   > /tmp/xvnc.log 2>&1 &
 for i in \$(seq 1 40); do [ -S /tmp/.X11-unix/X1 ] && break; sleep 0.3; done
 eval "\$(dbus-launch --sh-syntax)"
+# TigerVNC only bridges the X clipboard when vncconfig is running; without it
+# no ServerCutText/ClientCutText is ever exchanged, whatever the viewer does.
+vncconfig -nowin >/dev/null 2>&1 &
 exec startxfce4
 EOF
 chmod 755 "$MNT/usr/local/bin/droidnix-session"

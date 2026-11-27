@@ -39,6 +39,7 @@ fun HomeScreen(
     onOpenDesktop: () -> Unit,
     onRefreshLog: () -> Unit,
     onOpenInstall: () -> Unit,
+    onCheckAgain: () -> Unit,
 ) {
     val env = state.environments.firstOrNull { it.rootDir == state.selected }
     val status = state.status
@@ -68,6 +69,7 @@ fun HomeScreen(
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 OutlinedButton(onClick = onOpenInstall) { Text("Open Install Linux") }
+                OutlinedButton(onClick = onCheckAgain) { Text("Check again") }
             }
         } else {
             EnvironmentCard(

@@ -69,6 +69,35 @@ class RfbClientTest {
     }
 
     @Test
+    fun hextileSubrectColourCoversWholeRect() {
+        // A 2x2 subrect at (0,0) inside a 4x4 tile must fill all four pixels.
+        // The encoded width/height nibbles are one less than the real size.
+        val frame = exchange(expectClipboard = false, fbHeight = 4) { _, out ->
+            out.writeByte(0)
+            out.writeByte(0)
+            out.writeShort(1)
+            out.writeShort(0)
+            out.writeShort(0)
+            out.writeShort(4)
+            out.writeShort(4)
+            out.writeInt(Rfb.ENC_HEXTILE)
+            out.writeByte(0x02 or 0x08 or 0x10) // background, subrects, coloured
+            writePixel(out, 0xFF000000.toInt()) // black background
+            out.writeByte(1)
+            writePixel(out, 0xFFFFFFFF.toInt()) // white
+            out.writeByte(0x00) // x=0, y=0
+            out.writeByte(0x11) // (2-1) << 4 | (2-1)
+            out.flush()
+        } ?: error("no frame received")
+
+        assertEquals(0xFFFFFFFF.toInt(), frame.pixels[0])
+        assertEquals(0xFFFFFFFF.toInt(), frame.pixels[1])
+        assertEquals(0xFFFFFFFF.toInt(), frame.pixels[4])
+        assertEquals(0xFFFFFFFF.toInt(), frame.pixels[5])
+        assertEquals(0xFF000000.toInt(), frame.pixels[2])
+    }
+
+    @Test
     fun hextileBackgroundAndSubrect() {
         val frame = exchange(expectClipboard = false) { _, out ->
             out.writeByte(0)
@@ -93,6 +122,29 @@ class RfbClientTest {
         assertEquals(0xFFFF0000.toInt(), frame.pixels[3])
     }
 
+    @Test
+    fun oversizedRectIsClippedNotFatal() {
+        // A 4x4 rect on a 4x2 framebuffer used to index past the pixel array.
+        val frame = exchange(expectClipboard = false) { _, out ->
+            out.writeByte(0)
+            out.writeByte(0)
+            out.writeShort(1)
+            out.writeShort(0)
+            out.writeShort(0)
+            out.writeShort(4)
+            out.writeShort(4) // taller than the framebuffer
+            out.writeInt(Rfb.ENC_HEXTILE)
+            out.writeByte(0x02) // background only
+            writePixel(out, 0xFF102030.toInt())
+            out.flush()
+        } ?: error("no frame received")
+
+        assertEquals(4, frame.width)
+        assertEquals(2, frame.height) // clipped to the framebuffer
+        assertEquals(8, frame.pixels.size)
+        assertEquals(0xFF102030.toInt(), frame.pixels[7])
+    }
+
     private fun writePixel(out: DataOutputStream, argb: Int) {
         out.writeByte(argb and 0xFF) // B
         out.writeByte((argb shr 8) and 0xFF) // G
@@ -104,6 +156,8 @@ class RfbClientTest {
 
     private fun exchange(
         expectClipboard: Boolean,
+        fbWidth: Int = 4,
+        fbHeight: Int = 2,
         script: (DataInputStream, DataOutputStream) -> Unit,
     ): Frame? = runBlocking {
         val server = ServerSocket(0, 1, InetAddress.getLoopbackAddress())
@@ -142,8 +196,8 @@ class RfbClientTest {
 
                     assertEquals(1, input.readUnsignedByte()) // ClientInit shared
 
-                    out.writeShort(4)
-                    out.writeShort(2)
+                    out.writeShort(fbWidth)
+                    out.writeShort(fbHeight)
                     out.write(ByteArray(16))
                     val name = "Mock Desktop".toByteArray(Charsets.ISO_8859_1)
                     out.writeInt(name.size)

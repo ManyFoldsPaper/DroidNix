@@ -44,6 +44,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
@@ -204,34 +205,10 @@ fun DesktopScreen(
         }
     }
 
-    Box(Modifier.fillMaxSize().background(Color.Black)) {
-        if (state.phase == DesktopPhase.CONNECTED && state.width > 0) {
-            RemoteView(
-                framebuffer = framebuffer,
-                remoteW = remoteW,
-                remoteH = remoteH,
-                scale = scale,
-                offset = offset,
-                fitScale = fitScale,
-                panMode = panMode,
-                canvasSize = canvasSize,
-                onCanvasSize = { canvasSize = it },
-                onScale = { scale = it },
-                onOffset = { offset = it },
-                onPointer = vm::pointer,
-                onTap = { x, y, right -> vm.tap(x, y, right) },
-                onScroll = vm::scroll,
-                onScrollH = vm::scrollHorizontal,
-            )
-        } else {
-            ConnectionState(
-                phase = state.phase,
-                error = state.error,
-                onRetry = { vm.connect("127.0.0.1", port, password) },
-                onBack = onClose,
-            )
-        }
-
+    // The toolbar is a sibling of the canvas, not an overlay: overlapping it
+    // would make the top of the remote desktop (XFCE panel, title bars)
+    // unreachable, because the toolbar eats those touches.
+    Column(Modifier.fillMaxSize().background(Color.Black)) {
         TopBar(
             title = env.displayName,
             subtitle = when (state.phase) {
@@ -270,6 +247,34 @@ fun DesktopScreen(
             },
         )
 
+        Box(Modifier.fillMaxWidth().weight(1f)) {
+        if (state.phase == DesktopPhase.CONNECTED && state.width > 0) {
+            RemoteView(
+                framebuffer = framebuffer,
+                remoteW = remoteW,
+                remoteH = remoteH,
+                scale = scale,
+                offset = offset,
+                fitScale = fitScale,
+                panMode = panMode,
+                canvasSize = canvasSize,
+                onCanvasSize = { canvasSize = it },
+                onScale = { scale = it },
+                onOffset = { offset = it },
+                onPointer = vm::pointer,
+                onTap = { x, y, right -> vm.tap(x, y, right) },
+                onScroll = vm::scroll,
+                onScrollH = vm::scrollHorizontal,
+            )
+        } else {
+            ConnectionState(
+                phase = state.phase,
+                error = state.error,
+                onRetry = { vm.connect("127.0.0.1", port, password) },
+                onBack = onClose,
+            )
+        }
+
         if (keyboardOn) {
             KeyRow(
                 modifier = Modifier
@@ -304,6 +309,7 @@ fun DesktopScreen(
                 imeAction = ImeAction.None,
             ),
         )
+        }
     }
 }
 
@@ -361,6 +367,9 @@ private fun RemoteView(
     Canvas(
         Modifier
             .fillMaxSize()
+            // A zoomed bitmap is larger than the canvas; without clipping it
+            // would paint over the toolbar above it.
+            .clipToBounds()
             .onSizeChanged { size -> onCanvasSize(size) }
             .pointerInput(remoteW, remoteH, panMode) {
                 fun clampOffset(candidate: Offset, s: Float): Offset {
